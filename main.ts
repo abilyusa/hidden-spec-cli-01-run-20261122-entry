@@ -602,6 +602,7 @@ function v4aEdits(lines: string[], strict: boolean): Edit[] {
         j++;
       }
       // Collect the section's lines, then drop blank lines at its end.
+      const secStart = j; // 0-based index of secLines[0]: after the Update File line and any Move to line.
       const secLines: string[] = [];
       while (j < last && !isSectionStart(lines[j]!)) {
         secLines.push(lines[j]!);
@@ -625,7 +626,7 @@ function v4aEdits(lines: string[], strict: boolean): Edit[] {
           continue;
         }
         if (m.trim() === '*** End of File') {
-          if (curChunk === null) throw new Exit2(`error: parse ${updateLine + 1 + k + 1}`);
+          if (curChunk === null) throw new Exit2(`error: parse ${secStart + k + 1}`);
           curChunk.eof = true;
           flushChunk();
           continue;
@@ -635,7 +636,7 @@ function v4aEdits(lines: string[], strict: boolean): Edit[] {
           curChunk.body.push(m);
           continue;
         }
-        throw new Exit2(`error: parse ${updateLine + 1 + k + 1}`);
+        throw new Exit2(`error: parse ${secStart + k + 1}`);
       }
       flushChunk();
       if (chunks.length === 0 && moveTo === null) throw new Exit2(`error: parse ${updateLine + 1}`);
