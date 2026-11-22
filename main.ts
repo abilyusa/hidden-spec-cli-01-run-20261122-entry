@@ -632,7 +632,16 @@ function v4aEdits(lines: string[], strict: boolean): Edit[] {
           continue;
         }
         if (m.startsWith(' ') || m.startsWith('-') || m.startsWith('+') || m === '') {
-          if (curChunk === null) curChunk = { anchor: null, body: [], eof: false };
+          if (curChunk === null) {
+            // SPEC section 8: a chunk starts at an `@@` line or, for the first chunk, at a body line.
+            // Once a chunk has ended (at `*** End of File`, or flushed by a later `@@`), a body line
+            // cannot start another chunk, so it is a parse error. The old code silently opened a new
+            // implicit chunk here; a blank line after `*** End of File` then became a phantom chunk
+            // matching one empty line, which could fail the whole edit with `no-match` even though the
+            // patch was otherwise fine.
+            if (chunks.length > 0) throw new Exit2(`error: parse ${secStart + k + 1}`);
+            curChunk = { anchor: null, body: [], eof: false };
+          }
           curChunk.body.push(m);
           continue;
         }
